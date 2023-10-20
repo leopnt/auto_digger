@@ -19,7 +19,9 @@ def describe(freqs, key_prefix=None) -> dict[str, float]:
         key_prefix + 'q1': q1,
         key_prefix + 'q3': q3}
 
-def build_feature_vector(audio_path: str) -> dict:
+def build_feature_vector(audio_path: str, verbose=False) -> dict:
+    if verbose:
+        print(f"Calculating features of '{audio_path}'...")
     x , sr = librosa.load(audio_path, sr=44100)
 
     out_vector: dict[str, float] = dict()
@@ -72,5 +74,4 @@ if __name__ == "__main__":
     parser.add_argument('audio_file', help='Path to the audio file')
     args = parser.parse_args()
 
-    print(f"Calculating features of '{args.audio_file}'...")
-    pprint.pprint(build_feature_vector(args.audio_file))
+    pprint.pprint(build_feature_vector(args.audio_file, verbose=True))
