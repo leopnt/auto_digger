@@ -65,7 +65,12 @@ def build_feature_vector(audio_path: str) -> dict:
     return out_vector
 
 if __name__ == "__main__":
+    import argparse
     import pprint
 
-    audio_path = "/Users/leopnt/Downloads/music_lib/h/2eh To RelaxxX - Wooka.aiff"
-    pprint.pprint(build_feature_vector(audio_path))
+    parser = argparse.ArgumentParser(description='Extract features of a raw audio file.')
+    parser.add_argument('audio_file', help='Path to the audio file')
+    args = parser.parse_args()
+
+    print(f"Calculating features of '{args.audio_file}'...")
+    pprint.pprint(build_feature_vector(args.audio_file))
