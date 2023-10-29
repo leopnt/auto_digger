@@ -62,12 +62,12 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
                     let result = release.insert_into_db(&mut conn);
                     match result {
-                        Ok(_) => println!("Insert successful"),
+                        Ok(_) => (),
                         Err(err) => eprintln!("Error: {}", err),
                     }
 
                     count += 1;
-                    if count % 10_000 == 0 {
+                    if count % 1000 == 0 {
                         println!(
                             "checked {} records\telapsed: {}",
                             count,
@@ -75,7 +75,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                         );
                     }
 
-                    if count >= 4 {
+                    if count >= 10000 {
                         break
                     }
                 }
