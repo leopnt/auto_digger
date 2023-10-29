@@ -105,14 +105,17 @@ pub struct Release {
 impl Release {
     pub fn insert_into_db(&self, conn: &mut PooledConn) -> std::result::Result<(), mysql::Error> {
         let result: Result<Vec<usize>> = conn.exec(
-            r"INSERT INTO MusicRelease (release_id, title, status, data_quality, date, country)
-            VALUES (:release_id, :title, :status, :data_quality, :date, :country)",
+            r"INSERT INTO MusicRelease (release_id, title, status, data_quality, year, country)
+            VALUES (:release_id, :title, :status, :data_quality, :year, :country)",
             params! {
                 "release_id" => self.id,
                 "title" => &self.title,
                 "status" => &self.status,
                 "data_quality" => &self.data_quality,
-                "date" => &self.date,
+                "year" => match &self.date {
+                    Some(date) => Some(&date[0..4]), // extract year from date
+                    None => None
+                },
                 "country" => &self.country
             },
         );
