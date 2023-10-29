@@ -9,12 +9,34 @@ use quick_xml::events::{BytesStart, Event};
 use quick_xml::reader::Reader;
 use quick_xml::writer::Writer;
 use std::env;
-use std::io::BufRead;
+use std::io;
 use time::Instant;
 
-fn main() -> std::io::Result<()> {
+use mysql::*;
+
+use dotenv::dotenv;
+
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    dotenv().ok();
     let args: Vec<String> = env::args().collect();
     let file_path = &args[1];
+
+    let opts = OptsBuilder::new()
+        .user(Some(env::var("USER").expect("USER env variable")))
+        .pass(Some(env::var("PASS").expect("PASS env variable")))
+        .ip_or_hostname(Some(
+            env::var("IP_OR_HOSTNAME").expect("IP_OR_HOSTNAME env variable"),
+        ))
+        .tcp_port(
+            env::var("PORT")
+                .expect("PORT env variable")
+                .parse::<u16>()?,
+        )
+        .db_name(Some(env::var("DB_NAME").expect("DB_NAME env variable")));
+
+    let pool = Pool::new(opts)?;
+    let mut conn = pool.get_conn()?;
+
     let mut reader = Reader::from_file(&file_path).unwrap();
 
     let mut buf = Vec::new();
@@ -38,6 +60,12 @@ fn main() -> std::io::Result<()> {
 
                     process_release(&release);
 
+                    let result = release.insert_into_db(&mut conn);
+                    match result {
+                        Ok(_) => println!("Insert successful"),
+                        Err(err) => eprintln!("Error: {}", err),
+                    }
+
                     count += 1;
                     if count % 10_000 == 0 {
                         println!(
@@ -45,6 +73,10 @@ fn main() -> std::io::Result<()> {
                             count,
                             start_time.elapsed()
                         );
+                    }
+
+                    if count >= 4 {
+                        break
                     }
                 }
                 _ => (),
@@ -67,7 +99,7 @@ fn main() -> std::io::Result<()> {
     Result::Ok(())
 }
 
-fn read_to_end_into_buffer<R: BufRead>(
+fn read_to_end_into_buffer<R: io::BufRead>(
     reader: &mut Reader<R>,
     start_tag: &BytesStart,
     junk_buf: &mut Vec<u8>,
@@ -91,7 +123,7 @@ fn read_to_end_into_buffer<R: BufRead>(
                 depth -= 1;
             }
             Event::Eof => {
-                panic!("oh no")
+                panic!("Reached EOF while reading a release")
             }
             _ => {}
         }
