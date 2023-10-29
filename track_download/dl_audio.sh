@@ -10,14 +10,14 @@ fi
 SCRIPT_DIR=`dirname "$0"`
 
 yt-dlp "$1" --add-header User-Agent:"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15" \
-    -o "$SCRIPT_DIR/youtube-downloaded/out.%(ext)s" \
+    -o "$SCRIPT_DIR/youtube_downloaded/out.%(ext)s" \
     -x --remux-video "webm>ogg/opus>ogg/m4a>ogg" \
     -f "bestaudio" \
     --add-metadata
     --no-part
 
-ffmpeg -i "$SCRIPT_DIR/youtube-downloaded/out.ogg"  -ar 44100 -b:a 256k -map_metadata 0 -map_metadata 0:s:0 -id3v2_version 3 -vn "$SCRIPT_DIR/youtube-downloaded/out.mp3"
+ffmpeg -i "$SCRIPT_DIR/youtube_downloaded/out.ogg"  -ar 44100 -b:a 256k -map_metadata 0 -map_metadata 0:s:0 -id3v2_version 3 -vn "$SCRIPT_DIR/youtube_downloaded/out.mp3"
 
-mv "$SCRIPT_DIR/youtube-downloaded/out.mp3" "$SCRIPT_DIR/youtube-downloaded/$2.mp3"
+mv "$SCRIPT_DIR/youtube_downloaded/out.mp3" "$SCRIPT_DIR/youtube_downloaded/$2.mp3"
 
-rm "$SCRIPT_DIR/youtube-downloaded/out.ogg"
+rm "$SCRIPT_DIR/youtube_downloaded/out.ogg"
