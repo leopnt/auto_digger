@@ -130,6 +130,31 @@ impl Release {
             Err(e)
         })?;
 
+        self.insert_styles(conn).or_else(|e| {
+            self.undo_insert(conn);
+            Err(e)
+        })?;
+
+        self.insert_artists(conn).or_else(|e| {
+            self.undo_insert(conn);
+            Err(e)
+        })?;
+
+        self.insert_labels(conn).or_else(|e| {
+            self.undo_insert(conn);
+            Err(e)
+        })?;
+
+        self.insert_formats(conn).or_else(|e| {
+            self.undo_insert(conn);
+            Err(e)
+        })?;
+
+        self.insert_videos(conn).or_else(|e| {
+            self.undo_insert(conn);
+            Err(e)
+        })?;
+
         Ok(())
     }
 
@@ -158,6 +183,85 @@ impl Release {
                     }
                 }),
             )?;
+        }
+
+        Ok(())
+    }
+
+    fn insert_styles(&self, conn: &mut PooledConn) -> Result<(), mysql::Error> {
+        if let Some(styles) = &self.styles {
+            conn.exec_batch(
+                r"INSERT INTO MusicStyle (name, release_id)
+                VALUES (:name, :release_id)",
+                styles.style.iter().map(|name| {
+                    params! {
+                        "name" => &name,
+                        "release_id" => self.id
+                    }
+                }),
+            )?;
+        }
+
+        Ok(())
+    }
+
+    fn insert_artists(&self, conn: &mut PooledConn) -> Result<(), mysql::Error> {
+        conn.exec_batch(
+            r"INSERT INTO Artist (artist_id, name, release_id)
+              VALUES (:artist_id, :name, :release_id)",
+            self.artists.artist.iter().map(|artist| {
+                params! {
+                    "artist_id" => artist.id,
+                    "name" => &artist.name,
+                    "release_id" => self.id
+                }
+            }),
+        )
+    }
+
+    fn insert_labels(&self, conn: &mut PooledConn) -> Result<(), mysql::Error> {
+        conn.exec_batch(
+            r"INSERT INTO MusicLabel (label_id, name, catno, release_id)
+              VALUES (:label_id, :name, :catno, :release_id)",
+            self.labels.label.iter().map(|label| {
+                params! {
+                    "label_id" => label.id,
+                    "name" => &label.name,
+                    "catno" => &label.catno,
+                    "release_id" => self.id
+                }
+            }),
+        )
+    }
+
+    fn insert_formats(&self, conn: &mut PooledConn) -> Result<(), mysql::Error> {
+        conn.exec_batch(
+            r"INSERT INTO MusicFormat (name, qty, release_id)
+              VALUES (:name, :qty, :release_id)",
+            self.formats.format.iter().map(|format| {
+                params! {
+                    "name" => &format.name,
+                    "qty" => &format.qty,
+                    "release_id" => self.id
+                }
+            }),
+        )
+    }
+
+    fn insert_videos(&self, conn: &mut PooledConn) -> Result<(), mysql::Error> {
+        if let Some(videos) = &self.videos {
+            conn.exec_batch(
+                r"INSERT INTO Video (title, duration, url, release_id)
+              VALUES (:title, :duration, :url, :release_id)",
+                videos.video.iter().map(|video| {
+                    params! {
+                        "title" => &video.title,
+                        "duration" => video.duration,
+                        "url" => &video.src,
+                        "release_id" => self.id
+                    }
+                }),
+            )?
         }
 
         Ok(())
