@@ -103,11 +103,7 @@ pub struct Release {
 }
 
 impl Release {
-    pub fn insert_into_db(
-        &self,
-        conn: &mut PooledConn,
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
-        // Insert tracks to the database
+    pub fn insert_into_db(&self, conn: &mut PooledConn) -> std::result::Result<(), mysql::Error> {
         let result: Result<Vec<usize>> = conn.exec(
             r"INSERT INTO MusicRelease (release_id, title, status, data_quality, date, country)
             VALUES (:release_id, :title, :status, :data_quality, :date, :country)",
@@ -120,14 +116,25 @@ impl Release {
                 "country" => &self.country
             },
         );
+        if let Err(e) = result {
+            return Err(e);
+        }
 
-        match result {
-            Err(e) => return Err(Box::new(e)),
-            _ => (),
-        };
+        self.insert_tracks(conn).or_else(|e| {
+            self.undo_insert(conn);
+            Err(e)
+        })?;
 
-        // Insert tracks to the database
-        let result = conn.exec_batch(
+        self.insert_genres(conn).or_else(|e| {
+            self.undo_insert(conn);
+            Err(e)
+        })?;
+
+        Ok(())
+    }
+
+    fn insert_tracks(&self, conn: &mut PooledConn) -> Result<(), mysql::Error> {
+        conn.exec_batch(
             r"INSERT INTO Tracklist (title, release_id)
               VALUES (:title, :release_id)",
             self.tracklist.track.iter().map(|track| {
@@ -136,30 +143,43 @@ impl Release {
                     "release_id" => self.id
                 }
             }),
+        )
+    }
+
+    fn insert_genres(&self, conn: &mut PooledConn) -> Result<(), mysql::Error> {
+        if let Some(genres) = &self.genres {
+            conn.exec_batch(
+                r"INSERT INTO MusicGenre (name, release_id)
+                VALUES (:name, :release_id)",
+                genres.genre.iter().map(|name| {
+                    params! {
+                        "name" => &name,
+                        "release_id" => self.id
+                    }
+                }),
+            )?;
+        }
+
+        Ok(())
+    }
+
+    fn undo_insert(&self, conn: &mut PooledConn) {
+        // Undo temporary inserts. Since there is a Foreign Key on the
+        // release on every table, we simply delete the current release
+        // and it will cascade/propagate to other tables
+        let result: Result<Vec<usize>> = conn.exec(
+            r"DELETE FROM MusicRelease
+                        WHERE release_id = :release_id",
+            params! {
+                "release_id" => self.id
+            },
         );
 
-        match result {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                // Revert temporary inserts. Since there is a Foreign Key on the
-                // release on every table, we simply delete the current release
-                // and it will cascade/propagate to other tables
-                let result: Result<Vec<usize>> = conn.exec(
-                    r"DELETE FROM MusicRelease
-                    WHERE release_id = :release_id",
-                    params! {
-                        "release_id" => self.id
-                    },
-                );
-
-                match result {
-                    Err(e) => eprintln!("Couldn't revert temporary Release inserts ! {}", e),
-                    _ => (),
-                };
-
-                // Return the source of the error
-                Err(Box::new(e))
-            }
+        if let Err(e) = result {
+            panic!(
+                "Couldn't revert temporary Release inserts on release_id={}: {}",
+                self.id, e
+            );
         }
     }
 }
