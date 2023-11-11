@@ -1,28 +1,51 @@
 import numpy as np
 import librosa
 
+
 def describe(freqs, key_prefix=None) -> dict[str, float]:
+    """
+    Get a dictionary of statistics of the given frequencies.
+
+    Args:
+        freqs (np.ndarray): An array of frequencies.
+        key_prefix (str, optional): The prefix to add to the keys of the returned dictionary. Defaults to None.
+
+    Returns:
+        dict[str, float]: A dictionary containing the statistics of the given frequencies.
+    """
     mean = np.mean(freqs)
-    std = np.std(freqs) 
-    maxv = np.amax(freqs) 
-    minv = np.amin(freqs) 
+    std = np.std(freqs)
+    maxv = np.amax(freqs)
+    minv = np.amin(freqs)
     median = np.median(freqs)
     q1 = np.quantile(freqs, 0.25)
     q3 = np.quantile(freqs, 0.75)
-    
+
     return {
-        key_prefix + 'mean': mean,
-        key_prefix + 'std': std,
-        key_prefix + 'maxv': maxv,
-        key_prefix + 'minv': minv,
-        key_prefix + 'median': median,
-        key_prefix + 'q1': q1,
-        key_prefix + 'q3': q3}
+        key_prefix + "mean": mean,
+        key_prefix + "std": std,
+        key_prefix + "maxv": maxv,
+        key_prefix + "minv": minv,
+        key_prefix + "median": median,
+        key_prefix + "q1": q1,
+        key_prefix + "q3": q3,
+    }
+
 
 def build_feature_vector(audio_path: str, verbose=False) -> dict:
+    """
+    Builds a feature vector from the given audio file.
+
+    Args:
+        audio_path (str): The path to the audio file.
+        verbose (bool, optional): Whether to print progress messages. Defaults to False.
+
+    Returns:
+        dict: A dictionary containing the features of the audio file.
+    """
     if verbose:
         print(f"Calculating features of '{audio_path}'...")
-    x , sr = librosa.load(audio_path, sr=44100)
+    x, sr = librosa.load(audio_path, sr=44100)
 
     out_vector: dict[str, float] = dict()
 
@@ -36,27 +59,42 @@ def build_feature_vector(audio_path: str, verbose=False) -> dict:
     for key, stat in freqs.items():
         out_vector[key] = stat
 
-    zero_crossing_rate = describe(librosa.feature.zero_crossing_rate(x)[0], key_prefix="zero_crossing_rate_")
+    zero_crossing_rate = describe(
+        librosa.feature.zero_crossing_rate(x)[0], key_prefix="zero_crossing_rate_"
+    )
     for key, stat in zero_crossing_rate.items():
         out_vector[key] = stat
 
-    spectral_centroids = describe(librosa.feature.spectral_centroid(y=x, sr=sr)[0], key_prefix="spectral_centroids_")
+    spectral_centroids = describe(
+        librosa.feature.spectral_centroid(y=x, sr=sr)[0],
+        key_prefix="spectral_centroids_",
+    )
     for key, stat in spectral_centroids.items():
         out_vector[key] = stat
 
-    spectral_bandwidth = describe(librosa.feature.spectral_bandwidth(y=x, sr=sr)[0], key_prefix="spectral_bandwidth_")
+    spectral_bandwidth = describe(
+        librosa.feature.spectral_bandwidth(y=x, sr=sr)[0],
+        key_prefix="spectral_bandwidth_",
+    )
     for key, stat in spectral_bandwidth.items():
         out_vector[key] = stat
 
-    spectral_contrast = describe(librosa.feature.spectral_contrast(y=x, sr=sr)[0], key_prefix="spectral_contrast_")
+    spectral_contrast = describe(
+        librosa.feature.spectral_contrast(y=x, sr=sr)[0],
+        key_prefix="spectral_contrast_",
+    )
     for key, stat in spectral_contrast.items():
         out_vector[key] = stat
 
-    spectral_rolloff = describe(librosa.feature.spectral_rolloff(y=x, sr=sr)[0], key_prefix="spectral_rolloff_")
+    spectral_rolloff = describe(
+        librosa.feature.spectral_rolloff(y=x, sr=sr)[0], key_prefix="spectral_rolloff_"
+    )
     for key, stat in spectral_rolloff.items():
         out_vector[key] = stat
 
-    spectral_flatness = describe(librosa.feature.spectral_flatness(y=x)[0], key_prefix="spectral_flatness_")
+    spectral_flatness = describe(
+        librosa.feature.spectral_flatness(y=x)[0], key_prefix="spectral_flatness_"
+    )
     for key, stat in spectral_flatness.items():
         out_vector[key] = stat
 
@@ -66,12 +104,15 @@ def build_feature_vector(audio_path: str, verbose=False) -> dict:
 
     return out_vector
 
+
 if __name__ == "__main__":
     import argparse
     import pprint
 
-    parser = argparse.ArgumentParser(description='Extract features of a raw audio file.')
-    parser.add_argument('audio_file', help='Path to the audio file')
+    parser = argparse.ArgumentParser(
+        description="Extract features of a raw audio file."
+    )
+    parser.add_argument("audio_file", help="Path to the audio file")
     args = parser.parse_args()
 
     pprint.pprint(build_feature_vector(args.audio_file, verbose=True))
