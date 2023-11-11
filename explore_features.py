@@ -10,6 +10,15 @@ from sklearn.metrics import accuracy_score
 
 
 def plot_correlation_matrix(df):
+    """
+    Plots a heatmap of the correlation matrix of a given dataframe.
+
+    Parameters:
+    df (pandas.DataFrame): The dataframe to compute the correlation matrix and plot the heatmap.
+
+    Returns:
+    None
+    """
     # Compute the correlation matrix
     correlation_matrix = df.iloc[:, 1:].corr()
 
@@ -17,10 +26,17 @@ def plot_correlation_matrix(df):
     plt.figure(figsize=(14, 3))  # Adjust the figure size as needed
 
     # Create the heatmap without annotations and adjust the font size
-    ax =sns.heatmap(correlation_matrix.iloc[:11, :], annot=False, cmap="coolwarm", linewidths=0.5, square=True,
-                    xticklabels=1, yticklabels=1, )
+    ax = sns.heatmap(
+        correlation_matrix.iloc[:11, :],
+        annot=False,
+        cmap="coolwarm",
+        linewidths=0.5,
+        square=True,
+        xticklabels=1,
+        yticklabels=1,
+    )
 
-    ax.tick_params(axis='both', which='both', labelsize=6)
+    ax.tick_params(axis="both", which="both", labelsize=6)
     ax.set_xticklabels(ax.get_xticklabels(), rotation=60)
 
     # Set plot title
@@ -29,7 +45,17 @@ def plot_correlation_matrix(df):
     # Show the plot
     plt.show()
 
+
 def plot_pca(df):
+    """
+    Plots a scatter plot of the principal components of a given dataframe using PCA.
+
+    Args:
+    df (pandas.DataFrame): The dataframe to be used for PCA.
+
+    Returns:
+    None
+    """
     class_labels = df.iloc[:, 1:12]
     names = df.iloc[:, 0]
     features = df.iloc[:, 12:]
@@ -53,18 +79,18 @@ def plot_pca(df):
             pc_df_scaled.loc[i, "PC1"],
             pc_df_scaled.loc[i, "PC2"],
             alpha=1.0,
-            marker='o',
-            facecolor='black',
-            s=2
+            marker="o",
+            facecolor="black",
+            s=2,
         )
 
         plt.annotate(
             names[i],
             (pc_df_scaled.loc[i, "PC1"], pc_df_scaled.loc[i, "PC2"]),
             textcoords="offset points",
-            xytext=(0,-5),
-            ha='center',
-            fontsize=4
+            xytext=(0, -5),
+            ha="center",
+            fontsize=4,
         )
 
     plt.xlabel("Principal Component 1")
@@ -74,12 +100,24 @@ def plot_pca(df):
     # Show the plot
     plt.show()
 
+
 def train(df) -> RandomForestClassifier:
+    """
+    Trains a random forest classifier on the given dataframe and returns the trained model.
+
+    Parameters:
+    df (pandas.DataFrame): The dataframe to train the model on.
+
+    Returns:
+    RandomForestClassifier: The trained random forest classifier model.
+    """
     X = df.iloc[:, 12:]
     y = df.iloc[:, 1:12]
     y = y.replace({True: 1, False: 0})
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     model = RandomForestClassifier()
 
