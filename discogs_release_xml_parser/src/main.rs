@@ -19,7 +19,10 @@ use dotenv::dotenv;
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     let args: Vec<String> = env::args().collect();
-    let file_path = &args[1];
+    let file_path = args.get(1).unwrap_or_else(|| {
+        eprintln!("Error: No file path provided.");
+        std::process::exit(1);
+    });
 
     let opts = OptsBuilder::new()
         .user(Some(env::var("USER").expect("USER env variable")))
