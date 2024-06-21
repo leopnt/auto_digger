@@ -26,3 +26,5 @@ tokenizers==0.15.0
 tensorflow==2.14.0 
 keras==2.14.0
 tensorflow-metal==1.1.0
+
+mutagen==1.47.0
