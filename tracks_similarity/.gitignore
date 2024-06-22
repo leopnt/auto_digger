@@ -2,3 +2,4 @@ tracks/
 data/
 .env
 *.joblib
+*.h5
