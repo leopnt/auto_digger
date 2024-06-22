@@ -1,2 +1,4 @@
 tracks/
 data/
+.env
+*.joblib
